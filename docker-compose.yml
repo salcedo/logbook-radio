@@ -1,0 +1,97 @@
+version: '3.7'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    restart: unless-stopped
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.logbook-nginx.rule: 'Host(`logbook.pw`) || Host(`www.logbook.pw`)'
+      traefik.http.routers.logbook-nginx.entrypoints: 'https'
+      traefik.http.routers.logbook-nginx.middlewares: 'redirect-to-domain'
+      traefik.http.routers.logbook-nginx.tls.certresolver: 'acme-http'
+    networks:
+      - external
+      - backend
+    volumes:
+      - /srv/logbook.pw:/var/www/html:ro
+
+  jukebox-falcon:
+    build:
+      context: .
+      dockerfile: Dockerfile.jukebox
+    restart: unless-stopped
+    depends_on:
+      - icecast
+      - jukebox-controller
+      - mpd
+    networks:
+      - backend
+      - database
+
+  jukebox-controller:
+    build:
+      context: .
+      dockerfile: Dockerfile.jukebox
+    restart: unless-stopped
+    command: 'python controller.py'
+    depends_on:
+      - mpd
+    networks:
+      - backend
+      - database
+    volumes:
+      - music:/music
+
+  jukebox-rq-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.jukebox
+    restart: unless-stopped
+    command: 'rq worker -u redis://redis'
+    networks:
+      - backend
+      - database
+    volumes:
+      - music:/music
+
+  icecast:
+    build:
+      context: .
+      dockerfile: Dockerfile.icecast
+    restart: unless-stopped
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.logbook-icecast.rule: '(Host(`logbook.pw`) || Host(`www.logbook.pw`)) && PathPrefix(`/listen`)'
+      traefik.http.routers.logbook-icecast.entrypoints: 'https'
+      traefik.http.routers.logbook-icecast.middlewares: 'redirect-to-domain'
+      traefik.http.routers.logbook-icecast.tls.certresolver: 'acme-http'
+    networks:
+      - backend
+      - external
+
+  mpd:
+    build:
+      context: .
+      dockerfile: Dockerfile.mpd
+    restart: unless-stopped
+    depends_on:
+      - icecast
+    networks:
+      - backend
+    volumes:
+      - music:/var/lib/mpd/music:ro
+      - mpd_data:/var/lib/mpd
+
+networks:
+  external:
+    external: true
+  database:
+    external: true
+  backend:
+
+volumes:
+  mpd_data:
+  music:

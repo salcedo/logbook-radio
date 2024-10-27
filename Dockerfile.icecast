@@ -1,0 +1,25 @@
+FROM archlinux
+
+WORKDIR /tmp/icecast-logbook
+
+COPY icecast-logbook .
+
+RUN set -x \
+        && pacman -Syu --noconfirm base-devel sudo \
+        && useradd -G wheel -m build \
+        && useradd -m icecast \
+        && chown -R build: /tmp/icecast-logbook \
+        && sed -i 's/^# %w.*SW.*/%wheel ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
+
+USER build
+RUN makepkg -si --noconfirm
+
+USER root
+RUN chown -R icecast: /var/log/icecast
+COPY config/icecast.xml /etc/icecast.xml
+
+WORKDIR /
+
+USER icecast
+
+CMD ["/usr/bin/icecast", "-c", "/etc/icecast.xml"]

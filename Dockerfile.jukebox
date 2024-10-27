@@ -1,0 +1,22 @@
+FROM python:alpine
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+RUN set -x \
+        && apk update \
+        && apk add --no-cache ffmpeg mpc shadow \
+        && pip install --no-cache-dir -r requirements.txt \
+        && usermod -aG audio nobody
+
+COPY jukebox .
+
+USER nobody
+
+CMD [ \
+    "gunicorn", \
+    "--reload", \
+    "-w", "2", \
+    "-t", "12", \
+    "-b", "0.0.0.0:5000", \
+    "app:api"]

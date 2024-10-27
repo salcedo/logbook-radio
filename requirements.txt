@@ -1,0 +1,8 @@
+-i https://pypi.org/simple
+click==7.0
+falcon==2.0.0
+gunicorn==20.0.4
+python-musicpd==0.4.4
+redis==3.4.1
+rq==1.2.2
+youtube-dl==2020.1.24

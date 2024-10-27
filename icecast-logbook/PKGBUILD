@@ -1,0 +1,40 @@
+# Maintainer: Lukas Fleischer <lfleischer@archlinux.org>
+# Contributor: Andrea Scarpino <andrea@archlinux.org>
+# Contributor: Andreas Radke <andyrtr@archlinux.org>
+# Contributor: Jason Chu <jchu@xentac.net>
+
+pkgname=icecast-logbook
+pkgver=2.4.4
+pkgrel=1
+pkgdesc='Streaming audio over the Internet'
+arch=('x86_64')
+license=('GPL')
+url='https://www.icecast.org/'
+depends=('libxslt' 'libvorbis' 'curl' 'speex' 'libtheora' 'libkate')
+backup=('etc/icecast.xml'
+        'etc/logrotate.d/icecast')
+source=("https://downloads.us.xiph.org/releases/icecast/icecast-${pkgver}.tar.gz"
+	'start-by-nobody.patch'
+	'reverse-proxy.patch')
+md5sums=('835c7b571643f6436726a6118defb366'
+	 'd8e929d2214123a1954da4383bf16583'
+	 'e7dbd48967d36bc416a732a23f1d28ec')
+
+build() {
+  cd "${srcdir}/icecast-${pkgver}"
+
+  patch -Np1 -i "${srcdir}/start-by-nobody.patch"
+  patch -Np1 -i "${srcdir}/reverse-proxy.patch"
+
+  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+  make
+}
+
+package() {
+  cd "${srcdir}/icecast-${pkgver}"
+
+  make DESTDIR="${pkgdir}" install
+
+  # create log directory
+  install -d -g99 -o99 "${pkgdir}/var/log/icecast"
+}

@@ -1,0 +1,100 @@
+diff -urN icecast-2.4.4/src/admin.c icecast-patched/src/admin.c
+--- icecast-2.4.4/src/admin.c	2018-10-31 13:52:49.000000000 -0400
++++ icecast-patched/src/admin.c	2020-02-09 11:26:20.453279901 -0500
+@@ -767,11 +767,10 @@
+     config = config_get_config();
+     snprintf (client->refbuf->data + ret, PER_CLIENT_REFBUF_SIZE - ret,
+         "Content-Disposition = attachment; filename=listen.m3u\r\n\r\n" 
+-        "http://%s:%s@%s:%d%s\r\n",
++        "https//%s:%s@%s%s\r\n",
+         username,
+         password,
+         config->hostname,
+-        config->port,
+         mount
+     );
+     config_release_config();
+diff -urN icecast-2.4.4/src/fserve.c icecast-patched/src/fserve.c
+--- icecast-2.4.4/src/fserve.c	2018-10-31 13:52:49.000000000 -0400
++++ icecast-patched/src/fserve.c	2020-02-09 11:05:11.849953701 -0500
+@@ -475,16 +475,14 @@
+         {
+ 	    config = config_get_config();
+             snprintf (httpclient->refbuf->data + ret, BUFSIZE - ret,
+-                    "http://%s:%d%s\r\n", 
+-                    config->hostname, config->port,
+-                    sourceuri
+-                    );
++                    "https://%s%s\r\n", 
++                    config->hostname, sourceuri);
+             config_release_config();
+         }
+         else
+         {
+ 	    snprintf (httpclient->refbuf->data + ret, BUFSIZE - ret,
+-                    "http://%s%s\r\n", 
++                    "https://%s%s\r\n", 
+                     host, 
+                     sourceuri
+                     );
+diff -urN icecast-2.4.4/src/source.c icecast-patched/src/source.c
+--- icecast-2.4.4/src/source.c	2018-10-31 13:52:49.000000000 -0400
++++ icecast-patched/src/source.c	2020-02-09 11:08:09.619952697 -0500
+@@ -624,13 +624,13 @@
+     mount_proxy *mountinfo;
+ 
+     /* 6 for max size of port */
+-    listen_url_size = strlen("http://") + strlen(config->hostname) +
+-        strlen(":") + 6 + strlen(source->mount) + 1;
++    listen_url_size = strlen("https://") + strlen(config->hostname) +
++        6 + strlen(source->mount) + 1;
+ 
+     listenurl = malloc (listen_url_size);
+     memset (listenurl, '\000', listen_url_size);
+-    snprintf (listenurl, listen_url_size, "http://%s:%d%s",
+-            config->hostname, config->port, source->mount);
++    snprintf (listenurl, listen_url_size, "https://%s%s",
++            config->hostname, source->mount);
+     config_release_config();
+ 
+     str = httpp_getvar(source->parser, "ice-audio-info");
+@@ -1229,8 +1229,8 @@
+     source->timeout = config->source_timeout;
+     source->burst_size = config->burst_size;
+ 
+-    stats_event_args (source->mount, "listenurl", "http://%s:%d%s",
+-            config->hostname, config->port, source->mount);
++    stats_event_args (source->mount, "listenurl", "https://%s%s",
++            config->hostname, source->mount);
+ 
+     source_apply_mount (source, mountinfo);
+ 
+@@ -1487,8 +1487,8 @@
+             else if (update_all)
+             {
+                 stats_event_hidden (mount->mountname, NULL, mount->hidden);
+-                stats_event_args (mount->mountname, "listenurl", "http://%s:%d%s",
+-                        config->hostname, config->port, mount->mountname);
++                stats_event_args (mount->mountname, "listenurl", "https://%s%s",
++                        config->hostname, mount->mountname);
+                 stats_event (mount->mountname, "listeners", "0");
+                 if (mount->max_listeners < 0)
+                     stats_event (mount->mountname, "max_listeners", "unlimited");
+diff -urN icecast-2.4.4/src/yp.c icecast-patched/src/yp.c
+--- icecast-2.4.4/src/yp.c	2018-10-31 13:52:49.000000000 -0400
++++ icecast-patched/src/yp.c	2020-02-09 11:25:44.726613436 -0500
+@@ -585,12 +585,12 @@
+         if (url == NULL)
+             break;
+         config = config_get_config();
+-        ret = snprintf (url, len, "http://%s:%d%s", config->hostname, config->port, mount);
++        ret = snprintf (url, len, "https://%s%s", config->hostname, mount);
+         if (ret >= (signed)len)
+         {
+             s = realloc (url, ++ret);
+             if (s) url = s;
+-            snprintf (url, ret, "http://%s:%d%s", config->hostname, config->port, mount);
++            snprintf (url, ret, "https://%s%s", config->hostname, mount);
+         }
+ 
+         mountproxy = config_find_mount (config, mount, MOUNT_TYPE_NORMAL);

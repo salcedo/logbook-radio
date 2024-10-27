@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Logbook Radio</title>
+    <style>
+      body {
+        padding-left: 20px;
+        padding-right: 20px;
+        background-color: #1d1f21;
+        color: #c5c8c6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Logbook Radio</h1>
+    <p>Listen:</p>
+    <pre>
+      $ mpv https://logbook.pw/listen
+      $ curl https://logbook.pw/jukebox | jq
+    </pre>
+    <p>Submit:</p>
+    <pre>
+      $ curl -d &lt;youtube_url&gt; https://logbook.pw/jukebox | jq
+    </pre>
+    <audio controls>
+      <source src="/listen" type="audio/mpeg" />
+      <em>Sorry, your browser doesn't support HTML5 audio.</em>
+    </audio>
+  </body>
+</html>

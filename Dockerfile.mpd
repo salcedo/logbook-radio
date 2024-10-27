@@ -1,0 +1,11 @@
+FROM alpine
+
+RUN set -x \
+        && apk update \
+        && apk add --no-cache mpd
+
+COPY config/mpd.conf /etc/mpd.conf
+
+USER mpd
+
+CMD ["/usr/bin/mpd", "--no-daemon"]
